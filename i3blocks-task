@@ -50,3 +50,5 @@
                            output),
              :color "#fcc0cf"}))))
     (do (println "ERROR:" count-err) (System/exit 1))))
+
+; vim: set filetype=clojure:
