@@ -1,0 +1,52 @@
+#!/usr/bin/env bb
+
+(ns script
+  (:require [clojure.string :as str]
+            [cheshire.core :as json]
+            [clojure.java.shell :refer [sh]]))
+
+(defn str->epoch
+  [datetime]
+  (str (/ (.toEpochMilli
+            (.toInstant (java.time.ZonedDateTime/parse
+                          datetime
+                          (java.time.format.DateTimeFormatter/ofPattern
+                            "uuuuMMdd'T'HHmmssX"))))
+          1000)))
+
+;; TODO: Move `timeago` from bash to clojure:
+(defn epoch->timeago
+  [epoch]
+  (let [{timeago-exit :exit, timeago-err :err, timeago-out :out}
+          (try (sh "timeago" epoch) (catch java.lang.Exception e {:exit 1}))]
+    (if (zero? timeago-exit) (str " ( " timeago-out " )") "")))
+
+(defn format-output
+  [count-total active-id active-description active-start]
+  (str "Total: "
+       (str/trim-newline count-total)
+       (if (nil? active-id)
+         ""
+         (str " Active: [ "
+              active-id
+              " ] "
+              active-description
+              (epoch->timeago (str->epoch active-start))))))
+
+(let [{count-exit :exit, count-err :err, count-out :out}
+        (sh "task" "count" "status:pending")
+      {active-exit :exit, active-err :err, active-out :out}
+        (sh "task" "+ACTIVE" "export")]
+  (if (and (zero? count-exit) (zero? active-exit))
+    (let [{:keys [id description start]} (first (json/parse-string active-out
+                                                                   true))]
+      (println
+        (json/generate-string
+          (let [output (format-output count-out id description start)
+                count-output (count output)]
+            {:full_text output,
+             :short_text (if (> count-output 59)
+                           (str (subs output 0 (min 59 count-output)) "...")
+                           output),
+             :color "#fcc0cf"}))))
+    (do (println "ERROR:" count-err) (System/exit 1))))

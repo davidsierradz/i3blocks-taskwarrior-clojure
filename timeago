@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Copyright (c) 2019 Ulysse Buonomo <buonomo.ulysse@gmail.com> (MIT license)
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# Available at https://git.io/time_ago
+
+time_ago() {
+  if (($# < 1)); then
+    local u=$(tput smul) # underline
+    local n=$(tput rmul) # no underline
+    echo "usage: time_ago ${u}timestamp_ago${n} [${u}timestamp_now${n}]"
+    exit 1
+  fi
+  local minutes=60
+  local hours=$((60 * minutes))
+  local days=$((24 * hours))
+  local diff=$((${2:-$(date +%s)} - $1))
+  local human
+  if ((diff < 30)); then
+    human="${diff} seconds"
+  elif ((diff < 90)); then
+    human="1 minute"
+  elif ((diff < 1 * hours)); then
+    human="$(((diff + minutes / 2) / minutes)) minutes"
+  elif ((diff < 1 * hours + 30 * minutes)); then
+    human="about 1 hour"
+  elif ((diff < 1 * days)); then
+    human="about $(((diff + hours / 2) / hours)) hours"
+  elif ((diff < 2 * days)); then
+    human="1 day"
+  else
+    human="$(((diff + days / 2) / days)) days"
+  fi
+
+  echo -n "$human ago"
+}
+
+time_ago "$1" "$2"
